@@ -43,6 +43,11 @@
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
 
+		// Force prevent default on wheel events
+		canvas.addEventListener("wheel", function(evt) {
+  		  evt.preventDefault();     // This stops the page from scrolling
+		}, { passive: false });       // Important: passive must be false
+
         async function createScene() {
             const scene = new BABYLON.Scene(engine);
 
