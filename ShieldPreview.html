@@ -63,16 +63,21 @@ window.addEventListener('wheel', function(e) {
             camera.lowerRadiusLimit = 5;
             camera.upperRadiusLimit = 15;
 
-            // Light
-            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
-            light.intensity = 0.8;
+        const iframe = document.querySelector('iframe.xxJnkq');
 
-            // Environment (optional but nice)
-            scene.createDefaultEnvironment({
-                createSkybox: false,
-                createGround: false,
-		environmentTexture: "https://assets.babylonjs.com/environments/studio.env",
-            });
+function disablePageScroll() {
+  document.body.style.overflow = 'hidden';
+  // Optional: keep layout from shifting if scrollbar disappears
+  document.body.style.paddingRight = '15px'; // approximate scrollbar width
+}
+
+function enablePageScroll() {
+  document.body.style.overflow = '';
+  document.body.style.paddingRight = '';
+}
+
+iframe.addEventListener('mouseenter', disablePageScroll);
+iframe.addEventListener('mouseleave', enablePageScroll);
 
             // 1. Load the .glb model
             try {
