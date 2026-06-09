@@ -43,6 +43,16 @@
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
 
+// Strong wheel prevention for iframe
+canvas.addEventListener("wheel", function (evt) {
+    evt.preventDefault();
+    evt.stopImmediatePropagation();   // extra aggressive
+}, { passive: false });
+
+// Also on document and body for better coverage
+document.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
+document.documentElement.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
+document.body.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
 
         async function createScene() {
             const scene = new BABYLON.Scene(engine);
