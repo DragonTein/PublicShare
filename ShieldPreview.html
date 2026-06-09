@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Babylon.js Embedded</title>
+    <style>
+        /* Important: Reset and full-size container */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* The container that will hold the canvas */
+        #renderContainer {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #renderCanvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+    </style>
+
+    <!-- Babylon.js core -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <!-- Loaders (needed for .glb) -->
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+</head>
+<body>
+    <!-- Use this div as parent -->
+    <div id="renderContainer">
+        <canvas id="renderCanvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+
+        async function createScene() {
+            const scene = new BABYLON.Scene(engine);
+
+            // Camera
+            const camera = new BABYLON.ArcRotateCamera("camera", 
+		Math.PI / 1, 
+		Math.PI / 2.5, 
+		8, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
+            camera.lowerRadiusLimit = 5;
+            camera.upperRadiusLimit = 15;
+
+            // Light
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+            light.intensity = 0.8;
+
+            // Environment (optional but nice)
+            scene.createDefaultEnvironment({
+                createSkybox: false,
+                createGround: false,
+		environmentTexture: "https://assets.babylonjs.com/environments/studio.env",
+            });
+
+            // 1. Load the .glb model
+            try {
+                const glbUrl = "https://dragontein.github.io/PublicShare/Shield.glb"; 
+                // ← CHANGE THIS to your .glb URL or local path (e.g. "./models/myModel.glb")
+
+                const result = await BABYLON.SceneLoader.ImportMeshAsync("", glbUrl, "", scene);
+                console.log("GLB loaded. Meshes:", result.meshes.length);
+
+
+
+
+
+
+// === 1. Calculate overall bounds and center ===
+let min = new BABYLON.Vector3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+let max = new BABYLON.Vector3(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
+
+result.meshes.forEach((mesh) => {
+    // Skip non-renderable / helper meshes if needed
+    if (!mesh.isVisible || mesh.name.includes("__root__") || mesh.name.includes("root")) {
+        return;
+    }
+
+    // Make sure bounding info is up-to-date
+    mesh.computeWorldMatrix(true);
+    const boundingInfo = mesh.getBoundingInfo();
+    
+    if (boundingInfo) {
+        const meshMin = boundingInfo.boundingBox.minimumWorld;
+        const meshMax = boundingInfo.boundingBox.maximumWorld;
+
+        min = BABYLON.Vector3.Minimize(min, meshMin);
+        max = BABYLON.Vector3.Maximize(max, meshMax);
+    }
+});
+
+const center = BABYLON.Vector3.Center(min, max);
+const size = max.subtract(min);
+const radius = Math.max(size.x, size.y, size.z) * 1.8; // Adjust multiplier as needed
+
+console.log("Model Center:", center);
+console.log("Model Size:", size);
+
+
+
+	camera.setTarget(center);
+        camera.radius = radius;
+        
+        // Optional nice defaults
+        camera.lowerRadiusLimit = radius * 0.2;
+        camera.upperRadiusLimit = radius * 1;
+
+
+
+            } catch (err) {
+                console.error("Failed to load GLB:", err);
+            }
+
+
+
+            // 2. Load material from JSON and apply to ALL meshes
+            try {
+                const materialJsonUrl = "https://dragontein.github.io/PublicShare/ShieldMaterial.json"; 
+                // ← CHANGE THIS to your material JSON URL
+
+                // Fetch the JSON
+                const response = await fetch(materialJsonUrl);
+                const materialData = await response.json();
+
+                // Parse the material (works for StandardMaterial, PBRMaterial, NodeMaterial, etc.)
+                const newMaterial = BABYLON.Material.Parse(materialData, scene);
+
+                if (newMaterial) {
+                    console.log("Material loaded:", newMaterial.name);
+
+                    // Apply to every mesh in the scene
+                    scene.meshes.forEach(mesh => {
+                        //if (mesh.material !== newMaterial) 
+			if (mesh.name.includes("Plane_primitive0"))
+			{
+                            mesh.material = newMaterial;
+                        }
+                    });
+
+                    console.log("Material replaced on all meshes.");
+                }
+
+
+
+            } catch (err) {
+                console.error("Failed to load or apply material:", err);
+            }
+	
+		scene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
+            return scene;
+        }
+
+        // Create the scene and start the render loop
+        let scene;
+        createScene().then(createdScene => {
+            scene = createdScene;
+
+            engine.runRenderLoop(() => {
+                if (scene) scene.render();
+            });
+        });
+
+        // Handle resize
+        window.addEventListener("resize", () => {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>
