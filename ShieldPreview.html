@@ -43,7 +43,13 @@
         const canvas = document.getElementById("renderCanvas");
         const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
 
-
+// Prevent parent page scrolling when wheel is used over the iframe
+window.addEventListener('wheel', function(e) {
+  // Check if the event target is inside the iframe
+  if (iframe && iframe.contains(e.target)) {
+    e.preventDefault();
+  }
+}, { passive: false });
 
         async function createScene() {
             const scene = new BABYLON.Scene(engine);
